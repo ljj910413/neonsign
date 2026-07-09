@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrightLED - 세련된 LED 전광판</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700&family=Orbitron:wght@700&family=Nanum+Myeongjo:wght@700&family=Press+Start+2P&display=swap');
+        
+        .font-gothic { font-family: 'Pretendard', sans-serif; }
+        .font-neon { font-family: 'Orbitron', sans-serif; }
+        .font-myeongjo { font-family: 'Nanum Myeongjo', serif; }
+        .font-bit { font-family: 'Press Start 2P', cursive; }
+
+        .blink { animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        .move-left { animation: moveLeft 5s linear infinite; }
+        @keyframes moveLeft { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+        
+        .move-right { animation: moveRight 5s linear infinite; }
+        @keyframes moveRight { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+        
+        .move-up { animation: moveUp 5s linear infinite; }
+        @keyframes moveUp { from { transform: translateY(100%); } to { transform: translateY(-100%); } }
+        
+        .move-down { animation: moveDown 5s linear infinite; }
+        @keyframes moveDown { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 transition-colors duration-500">
+    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col">
+        <div id="setup-view" class="flex-1 flex flex-col">
+            <div id="preview-container" class="h-64 flex items-center justify-center overflow-hidden border-b shadow-inner p-4 transition-colors">
+                <div id="display-text" class="font-bold whitespace-pre-wrap w-full">텍스트를 입력하세요</div>
+            </div>
+
+            <div class="p-6 space-y-6 overflow-y-auto">
+                <textarea id="text-input" placeholder="응원 문구를 입력하세요 (엔터로 줄바꿈 가능)" class="w-full p-4 rounded-xl border border-gray-200 outline-none h-24"></textarea>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="color" id="color-input" value="#eab308" class="w-full h-10 rounded-lg cursor-pointer">
+                    <input type="color" id="bg-input" value="#1a1a1a" class="w-full h-10 rounded-lg cursor-pointer">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs text-gray-500">폰트 & 크기 & 정렬</label>
+                    <div class="flex gap-2 overflow-x-auto pb-2">
+                        <button onclick="setFont('font-gothic')" class="px-3 py-1 bg-white rounded border border-teal-200 text-sm">고딕</button>
+                        <button onclick="setFont('font-bit')" class="px-3 py-1 bg-white rounded border border-teal-200 text-sm">8bit</button>
+                        <button onclick="setSize('text-2xl')" class="px-3 py-1 bg-gray-100 rounded text-sm">S</button>
+                        <button onclick="setSize('text-4xl')" class="px-3 py-1 bg-gray-100 rounded text-sm">M</button>
+                        <button onclick="setSize('text-6xl')" class="px-3 py-1 bg-gray-100 rounded text-sm">L</button>
+                        <button onclick="setAlign('text-left')" class="px-3 py-1 bg-white rounded border border-teal-200 text-sm">←</button>
+                        <button onclick="setAlign('text-center')" class="px-3 py-1 bg-white rounded border border-teal-200 text-sm">↔</button>
+                        <button onclick="setAlign('text-right')" class="px-3 py-1 bg-white rounded border border-teal-200 text-sm">→</button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs text-gray-500">효과 선택</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setEffect('')" class="p-2 bg-white rounded border border-teal-200 text-xs">멈춤</button>
+                        <button onclick="setEffect('blink')" class="p-2 bg-white rounded border border-teal-200 text-xs">깜빡임</button>
+                        <button onclick="setEffect('move-left')" class="p-2 bg-white rounded border border-teal-200 text-xs">좌이동</button>
+                        <button onclick="setEffect('move-right')" class="p-2 bg-white rounded border border-teal-200 text-xs">우이동</button>
+                        <button onclick="setEffect('move-up')" class="p-2 bg-white rounded border border-teal-200 text-xs">상이동</button>
+                        <button onclick="setEffect('move-down')" class="p-2 bg-white rounded border border-teal-200 text-xs">하이동</button>
+                    </div>
+                </div>
+
+                <button onclick="enterFullScreen()" class="w-full py-4 bg-teal-500 text-white rounded-2xl font-bold hover:bg-teal-600 transition">전화면 시작</button>
+            </div>
+        </div>
+
+        <div id="full-view" class="hidden fixed inset-0 z-50 flex items-center justify-center p-5 cursor-pointer" onclick="exitFullScreen()">
+            <span id="full-text" class="font-bold select-none leading-tight whitespace-pre-wrap w-full"></span>
+        </div>
+    </div>
+
+    <script>
+        const state = { text: '집에가고\n있어요', color: '#eab308', bgColor: '#1a1a1a', font: 'font-gothic', size: 'text-4xl', effect: '', align: 'text-center' };
+
+        const updatePreview = () => {
+            const preview = document.getElementById('display-text');
+            const container = document.getElementById('preview-container');
+            preview.innerText = state.text;
+            preview.style.color = state.color;
+            preview.className = `${state.size} font-bold ${state.font} ${state.effect} ${state.align} whitespace-pre-wrap w-full`;
+            container.style.backgroundColor = state.bgColor;
+        };
+
+        document.getElementById('text-input').value = state.text;
+        updatePreview();
+
+        document.getElementById('text-input').addEventListener('input', (e) => { state.text = e.target.value; updatePreview(); });
+        document.getElementById('color-input').addEventListener('input', (e) => { state.color = e.target.value; updatePreview(); });
+        document.getElementById('bg-input').addEventListener('input', (e) => { state.bgColor = e.target.value; updatePreview(); });
+        
+        function setFont(f) { state.font = f; updatePreview(); }
+        function setSize(s) { state.size = s; updatePreview(); }
+        function setAlign(a) { state.align = a; updatePreview(); }
+        function setEffect(e) { state.effect = e; updatePreview(); }
+
+        function enterFullScreen() {
+            const fullView = document.getElementById('full-view');
+            const fullText = document.getElementById('full-text');
+            fullView.classList.remove('hidden');
+            fullView.style.backgroundColor = state.bgColor;
+            fullText.innerText = state.text;
+            fullText.style.color = state.color;
+            fullText.className = `text-[15vh] font-bold ${state.font} ${state.effect} ${state.align} whitespace-pre-wrap w-full`;
+        }
+
+        function exitFullScreen() {
+            fullView.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
